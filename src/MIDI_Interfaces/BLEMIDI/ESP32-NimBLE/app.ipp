@@ -36,15 +36,7 @@ extern "C" void ble_store_config_init(void);
 namespace cs::midi_ble_nimble {
 
 inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
-    // Initialize non-volatile storage
-    auto nvs_flash_init_rc = nvs_flash_init();
-    if (nvs_flash_init_rc == ESP_ERR_NVS_NO_FREE_PAGES ||
-        nvs_flash_init_rc == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        nvs_flash_init_rc = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(nvs_flash_init_rc);
-
+    ESP_LOGI("CS-BLEMIDI", "Initializing MIDI BLE");
     // Configure the hardware to support BLE using NimBLE.
     if (!init_hardware())
         return false;
@@ -71,6 +63,7 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
     // XXX Need to have template for store
     ble_store_config_init();
 
+    ESP_LOGI("CS-BLEMIDI", "Reset and initialize GATT server");
     CS_CHECK_ZERO(ble_gatts_reset());
     ble_svc_gap_init();
     ble_svc_gatt_init();
@@ -92,6 +85,7 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
                                       ble_settings.connection_interval.maximum);
 
     // Start the FreeRTOS task that runs the NimBLE stack
+    ESP_LOGI("CS-BLEMIDI", "Launching BLE Host Task");
     nimble_port_freertos_init([](void *) {
         ESP_LOGI("CS-BLEMIDI", "BLE Host Task Started");
         // This function will return only when nimble_port_stop() is executed
@@ -99,6 +93,7 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
         ESP_LOGI("CS-BLEMIDI", "BLE Host Task Ended");
         nimble_port_freertos_deinit();
     });
+    ESP_LOGI("CS-BLEMIDI", "Initialized MIDI BLE");
     return true;
 }
 

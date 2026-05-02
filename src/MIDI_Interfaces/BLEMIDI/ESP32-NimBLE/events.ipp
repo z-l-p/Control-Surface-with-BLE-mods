@@ -342,7 +342,7 @@ inline int cs_midi_ble_gap_callback(struct ble_gap_event *event, void *) {
         // Display action
         case BLE_GAP_EVENT_PASSKEY_ACTION: {
             if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
-                struct ble_sm_io pkey = {0};
+                struct ble_sm_io pkey {};
                 pkey.action = event->passkey.params.action;
                 pkey.passkey = 100000 + esp_random() % 900000;
                 ESP_LOGI("CS-BLEMIDI",

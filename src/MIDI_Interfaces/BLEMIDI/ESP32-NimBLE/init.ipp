@@ -17,6 +17,12 @@
 #include <nvs_flash.h>
 #include <soc/soc_caps.h>
 #endif
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE)
+#include <esp32-hal-hosted.h>
+#endif
+#if __has_include(<esp32-hal-bt-mem.h>)
+#include <esp32-hal-bt-mem.h>
+#endif
 
 #include "ble-macro-fix.h"
 #include "util.hpp"
@@ -24,7 +30,16 @@
 namespace cs::midi_ble_nimble {
 
 inline bool init_hardware() {
+#if defined(CONFIG_ESP_HOSTED_ENABLE_BT_NIMBLE)
+    // Initialize esp-hosted transport for BLE HCI when explicitly enabled
+    ESP_LOGI("CS-BLEMIDI", "Initializing hosted BLE");
+    if (!hostedInitBLE()) {
+        ESP_LOGE("CS-BLEMIDI", "Failed to initialize ESP-Hosted for BLE");
+        return false;
+    }
+#endif
 #if CS_MIDI_BLE_ESP_IDF_NIMBLE
+    // Assumes that nvs_flash_init() has already been called.
     CS_CHECK_ESP(nimble_port_init());
 #else // fall back to the h2zero/NimBLE-Arduino library
 #ifdef ESP_PLATFORM
