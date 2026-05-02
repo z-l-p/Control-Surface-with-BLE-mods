@@ -21,18 +21,26 @@
 
 #include <assert.h>
 
+// https://github.com/espressif/arduino-esp32/issues/12371
+#if __has_include("esp32-hal-bt-mem.h")
+#include "esp32-hal-bt-mem.h"
+#endif
+
 const char *midi_ble_name = "Control Surface (BLE)";
 
 void set_midi_ble_name(const char *name) { midi_ble_name = name; }
 
 bool midi_init(void) {
+    ESP_LOGI("MIDIBLE", "Ensure Bluetooth started");
     if (!btStarted() && !btStart())
         return false;
+    ESP_LOGI("MIDIBLE", "Bluetooth started");
 
     esp_err_t ret;
 
     esp_bluedroid_status_t bt_state = esp_bluedroid_get_status();
     if (bt_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+        ESP_LOGI("MIDIBLE", "Initializing Bluedroid");
         ret = esp_bluedroid_init();
         if (ret != ESP_OK) {
             ESP_LOGE("MIDIBLE", "Init bluetooth failed: %s",
@@ -42,6 +50,7 @@ bool midi_init(void) {
     }
 
     if (bt_state != ESP_BLUEDROID_STATUS_ENABLED) {
+        ESP_LOGI("MIDIBLE", "Enabling Bluedroid");
         ret = esp_bluedroid_enable();
         if (ret != ESP_OK) {
             ESP_LOGE("MIDIBLE", "Enable bluetooth failed: %s",
