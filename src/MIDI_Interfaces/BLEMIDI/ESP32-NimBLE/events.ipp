@@ -186,6 +186,7 @@ cs_midi_ble_service_register_callback(struct ble_gatt_register_ctxt *ctxt,
 namespace {
 inline void update_connection_params(uint16_t conn_handle,
                                      const cs::BLESettings &settings) {
+    ESP_LOGI("CS-BLEMIDI", "updating connection params");
     ble_gap_upd_params params {};
     params.latency = 0;
     params.itvl_max = settings.connection_interval.maximum;
@@ -220,7 +221,14 @@ inline int cs_midi_ble_gap_callback(struct ble_gap_event *event, void *) {
                 // Without this, Android does not initiate bonding or SC, but
                 // with it, Windows starts a connect/disconnect loop on the
                 // second connection ...
-                if (settings.initiate_security) {
+                // I believe this should be handled by the Android
+                // security manager automatically, and the peripheral should not
+                // initiate security itself. Anyway, this is disabled by default
+                // for now; I've spent enough time on this already.
+                if (settings.initiate_security && !desc.sec_state.bonded &&
+                    !desc.sec_state.encrypted &&
+                    !desc.sec_state.authenticated) {
+                    ESP_LOGI("CS-BLEMIDI", "initiating secure connection");
                     if (auto rc = ble_gap_security_initiate(conn_handle);
                         rc != 0) {
                         ESP_LOGE("CS-BLEMIDI",
@@ -230,8 +238,6 @@ inline int cs_midi_ble_gap_callback(struct ble_gap_event *event, void *) {
                                                  BLE_ERR_REM_USER_CONN_TERM);
                     }
                 }
-                // Update the connection parameters
-                update_connection_params(conn_handle, settings);
                 if (auto *inst = cs::midi_ble_nimble::state->instance)
                     inst->handleConnect(cs::BLEConnectionHandle {conn_handle});
             } else {
@@ -276,10 +282,16 @@ inline int cs_midi_ble_gap_callback(struct ble_gap_event *event, void *) {
         case BLE_GAP_EVENT_ENC_CHANGE: {
             ESP_LOGI("CS-BLEMIDI", "encryption change event; status=%d ",
                      event->enc_change.status);
+            auto conn_handle = event->enc_change.conn_handle;
             struct ble_gap_conn_desc desc;
-            auto rc = ble_gap_conn_find(event->enc_change.conn_handle, &desc);
+            auto rc = ble_gap_conn_find(conn_handle, &desc);
             assert(rc == 0);
             cs::midi_ble_nimble::print_conn_desc(&desc);
+            // Update the connection parameters if successful
+            if (event->enc_change.status == 0) {
+                const auto &settings = cs::midi_ble_nimble::state->settings;
+                update_connection_params(conn_handle, settings);
+            }
         } break;
 
         // Subscription (e.g. when a CCCD is updated)
@@ -325,7 +337,27 @@ inline int cs_midi_ble_gap_callback(struct ble_gap_event *event, void *) {
             // Return BLE_GAP_REPEAT_PAIRING_RETRY to indicate that the host should
             // continue with the pairing operation.
             return BLE_GAP_REPEAT_PAIRING_RETRY;
-        }
+        } break;
+
+        // Display action
+        case BLE_GAP_EVENT_PASSKEY_ACTION: {
+            if (event->passkey.params.action == BLE_SM_IOACT_DISP) {
+                struct ble_sm_io pkey = {0};
+                pkey.action = event->passkey.params.action;
+                pkey.passkey = 100000 + esp_random() % 900000;
+                ESP_LOGI("CS-BLEMIDI",
+                         "enter passkey %" PRIu32 " on the peer side",
+                         pkey.passkey);
+                auto rc = ble_sm_inject_io(event->passkey.conn_handle, &pkey);
+                if (rc != 0) {
+                    ESP_LOGE(
+                        "CS-BLEMIDI",
+                        "failed to inject security manager io, error code: %d",
+                        rc);
+                    return rc;
+                }
+            }
+        } break;
     }
 
     return 0;

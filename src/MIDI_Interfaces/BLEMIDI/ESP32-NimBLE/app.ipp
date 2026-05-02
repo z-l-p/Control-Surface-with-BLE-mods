@@ -36,6 +36,15 @@ extern "C" void ble_store_config_init(void);
 namespace cs::midi_ble_nimble {
 
 inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
+    // Initialize non-volatile storage
+    auto nvs_flash_init_rc = nvs_flash_init();
+    if (nvs_flash_init_rc == ESP_ERR_NVS_NO_FREE_PAGES ||
+        nvs_flash_init_rc == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        nvs_flash_init_rc = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(nvs_flash_init_rc);
+
     // Configure the hardware to support BLE using NimBLE.
     if (!init_hardware())
         return false;
@@ -45,8 +54,6 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
     ble_hs_cfg.sync_cb = cs_midi_ble_on_sync;
     ble_hs_cfg.gatts_register_cb = cs_midi_ble_service_register_callback;
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
-    // XXX Need to have template for store
-    ble_store_config_init();
 
     // No input or output capabilities.
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO;
@@ -55,11 +62,14 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
     // are exchanged
     ble_hs_cfg.sm_our_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC;
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ENC;
-    ble_hs_cfg.sm_mitm = 1;
+    ble_hs_cfg.sm_mitm = 0; // Not possible without IO capabilities
     ble_hs_cfg.sm_sc = 1;
     // Stores the IRK
     ble_hs_cfg.sm_our_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
+
+    // XXX Need to have template for store
+    ble_store_config_init();
 
     CS_CHECK_ZERO(ble_gatts_reset());
     ble_svc_gap_init();
