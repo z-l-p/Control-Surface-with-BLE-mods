@@ -9,6 +9,32 @@
 Control Surface is an Arduino library for building MIDI controllers and control
 surfaces.
 
+---
+
+**This (amateur, AI-assisted) fork by z-l-p adds options for setting BLE MIDI DIS names so your device will show up in DAWs like Reaper that refer to the manufacturer and model name instead of the BLE device name.**
+
+Example:
+```
+#include <Control_Surface.h>
+
+// Forward declarations for DIS setters added to Control Surface library
+namespace cs::midi_ble_nimble {
+    extern void setDISManufacturer(const char *name);
+    extern void setDISModel(const char *model);
+}
+```
+in your setup():
+```
+midi.setName("My BLE Device");
+cs::midi_ble_nimble::setDISManufacturer("My BLE");
+cs::midi_ble_nimble::setDISModel("Device");
+Control_Surface.begin();
+```
+
+Now your OS will connect to a device called "My BLE Device" and your DAW will list it as "My BLE - Device" or similar (manufacturer - model).
+
+---
+
 At its core, the library features a flexible [**MIDI abstraction layer**](https://tttapa.github.io/Control-Surface/Doxygen/d3/df7/midi-tutorial.html)
 with support for serial **5-pin DIN** MIDI, MIDI over **USB**, MIDI over **BLE**, etc.
 These MIDI interfaces are compatible with a wide range of Arduino boards
@@ -62,16 +88,16 @@ walkthrough of this example can be found on the [Getting Started](https://tttapa
 
 ```cpp
 #include <Control_Surface.h>  // Include the library
- 
+
 USBMIDI_Interface midi;  // Instantiate a MIDI Interface to use
- 
+
 // Instantiate an analog multiplexer
 CD74HC4051 mux {
   A0,       // Analog input pin
   {3, 4, 5} // Address pins S0, S1, S2
 };
- 
-// Create an array of CCPotentiometer objects that send out MIDI Control Change 
+
+// Create an array of CCPotentiometer objects that send out MIDI Control Change
 // messages when you turn the potentiometers connected to the 8 inputs of the mux.
 CCPotentiometer volumePotentiometers[] {
   { mux.pin(0), { MIDI_CC::Channel_Volume, Channel_1 } },
@@ -83,7 +109,7 @@ CCPotentiometer volumePotentiometers[] {
   { mux.pin(6), { MIDI_CC::Channel_Volume, Channel_7 } },
   { mux.pin(7), { MIDI_CC::Channel_Volume, Channel_8 } },
 };
- 
+
 void setup() {
   Control_Surface.begin();  // Initialize the Control Surface
 }
@@ -93,7 +119,7 @@ void loop() {
 }
 ```
 
-**Example 3**: Control Surface also supports many types of MIDI inputs. 
+**Example 3**: Control Surface also supports many types of MIDI inputs.
 For example, an LED that turns on when a MIDI Note On message for middle C is
 received:
 ```cpp
@@ -154,7 +180,7 @@ features of the Control Surface library, have a look at the following section
 and at the
 [**Topics**](https://tttapa.github.io/Control-Surface/Doxygen/topics.html) page.
 
-You can find an answer to some frequently asked questions on the 
+You can find an answer to some frequently asked questions on the
 [**FAQ**](https://tttapa.github.io/Control-Surface/Doxygen/da/dc1/FAQ.html) page.
 
 ## Feature overview
@@ -183,7 +209,7 @@ The following sections give a brief overview of the features of the library.
  - **Rotary encoders**
  - **Scanning keyboard matrices**
 
-Digital inputs are **debounced**, and analog inputs are filtered using 
+Digital inputs are **debounced**, and analog inputs are filtered using
 **digital filters and hysteresis**. This results in high accuracy without noise,
 without introducing latency.
 
@@ -196,13 +222,13 @@ Pitch Bend, Program/Patch change, etc.
 
  - **LEDs** (e.g. to indicate whether a track is muted/armed/soloed)
  - **LED rings** (e.g. to indicate the position of a pan knob)
- - **LED strips** (using the [FastLED](https://github.com/FastLED/FastLED) 
+ - **LED strips** (using the [FastLED](https://github.com/FastLED/FastLED)
                    library)
  - **VU meters**
  - **OLED displays**
  - **7-segment displays**
 
-A large portion of the **Mackie Control Universal** (MCU) protocol is 
+A large portion of the **Mackie Control Universal** (MCU) protocol is
 implemented.
 
 <sub>→ [_MIDI Input Elements documentation_](https://tttapa.github.io/Control-Surface/Doxygen/df/d8b/group__MIDIInputElements.html)</sub>
@@ -219,13 +245,13 @@ All controls can be arranged in **banks**: for example, if you have only 4
 physical faders, you can make them bankable, so they can be used to control
 the volume of many more different tracks. Changing banks can be done using push
 buttons, rotary encoders, etc.  
-Apart from banks and bank selectors, you can also add **transposers** to change 
+Apart from banks and bank selectors, you can also add **transposers** to change
 the key of your notes, for example.
 
 ### Extended input/output
 
-In order to save some IO pins, the library natively supports **multiplexers** 
-(e.g. 74HC4051 or 74HC4067) to read many switches or potentiometers, 
+In order to save some IO pins, the library natively supports **multiplexers**
+(e.g. 74HC4051 or 74HC4067) to read many switches or potentiometers,
 **Shift Registers** (e.g. 74HC595) to drive many LEDs, **MAX7219 LED drivers**,
 etc.
 
@@ -233,9 +259,9 @@ etc.
 
 ### Audio
 
-If you are using a Teensy 3.x or 4.x, you can use it as a 
+If you are using a Teensy 3.x or 4.x, you can use it as a
 **USB audio interface**. Just add an I²S DAC (e.g. PCM5102) and 5 lines of code,
-and you can start playing audio through your Teensy, by combining Control 
+and you can start playing audio through your Teensy, by combining Control
 Surface with the Teensy Audio library.  
 You can also add volume controls and VU meters for these audio connections.
 
@@ -243,14 +269,14 @@ You can also add volume controls and VU meters for these audio connections.
 
 ### Modular and extensible
 
-Thanks to the structure of the library, you can easily add your own MIDI or 
+Thanks to the structure of the library, you can easily add your own MIDI or
 display elements, using some minimal, high level code. All low level stuff is
-completely **reusable** (e.g. all MIDI operations, debouncing switches, 
+completely **reusable** (e.g. all MIDI operations, debouncing switches,
 filtering analog inputs, and so on).
 
 ## Installation
 
-Download the repository as a ZIP archive by going to the [home page of the 
+Download the repository as a ZIP archive by going to the [home page of the
 repository](https://github.com/tttapa/Control-Surface) and clicking
 the green <kbd>Code</kbd> button in the top right, then choosing “Download ZIP”.  
 Alternatively, click the following direct download link:
@@ -258,7 +284,7 @@ Alternatively, click the following direct download link:
 
 Open the Arduino IDE, and go to the _Sketch &gt; Include Library &gt; Add .ZIP
 Library_ menu.  
-Then navigate to your downloads directory where you just downloaded the 
+Then navigate to your downloads directory where you just downloaded the
 library.  
 Select it, and click _Ok_.
 
@@ -288,7 +314,7 @@ This covers a very large part of the Arduino platform, and similar boards will
 also work. For example, the Arduino Nano, Mega, Micro, Pro Micro, Teensy 2.0,
 Teensy LC, Teensy 3.x, Teensy 4.x are all known to work.
 
-If you have a board that's not supported, please 
+If you have a board that's not supported, please
 [open an issue](https://github.com/tttapa/Control-Surface/issues/new)
 and let me know!
 
@@ -353,14 +379,14 @@ documentation page for a table with supported features per board.
    Raspberry Pi Pico.
 - ([c35f29c](https://github.com/tttapa/Control-Surface/commit/c35f29ced7f3e491467bd61c1c71013099c01091))  
    The SoftwareSerial MIDI interfaces are now in separate header files that have
-   to be included explicitly if you want to use them. The headers in question 
+   to be included explicitly if you want to use them. The headers in question
    are [`SoftwareSerialMIDI_Interface.hpp`](https://tttapa.github.io/Control-Surface/Doxygen/d3/df2/SoftwareSerialMIDI__Interface_8hpp.html)
    and [`SoftwareSerialDebugMIDI_Interface.hpp`](https://tttapa.github.io/Control-Surface/Doxygen/de/d83/SoftwareSerialDebugMIDI__Interface_8hpp.html).
    This prevents redefinition errors of pin change interrupt vectors even if
    SoftwareSerial is not used.
 - ([bf8fb66](https://github.com/tttapa/Control-Surface/commit/bf8fb661fa97fb6420584362bfcee7ce67939f59))  
    The abbreviated MIDI send functions (such as `sendCC()`) have been deprecated
-   in favor of the full names (e.g. `sendControlChange()`). See the 
+   in favor of the full names (e.g. `sendControlChange()`). See the
    [MIDI_Sender documentation](https://tttapa.github.io/Control-Surface/Doxygen/d6/d72/classMIDI__Sender.html)
    for a full overview.
 - ([cf32e7e](https://github.com/tttapa/Control-Surface/commit/cf32e7e72d81269e97f18ba51c42ba10715d1852))  
@@ -368,7 +394,7 @@ documentation page for a table with supported features per board.
    three, because a System Common callback was added.
 - ([b727931](https://github.com/tttapa/Control-Surface/commit/b727931a44cb1e262ac32901f1e307583da90624))  
    The MIDI note name for the note F has been changed from `F` to `F_` in order
-   to avoid conflicts with the `F()` macro and its functional equivalent 
+   to avoid conflicts with the `F()` macro and its functional equivalent
    introduced [here](https://github.com/arduino/ArduinoCore-mbed/blob/7a8d3ee46262d943f7cc1158f8bce06f61c3ddb2/cores/arduino/Arduino.h#L35-L41).  
    It is now recommended to use `MIDI_Notes::C(4)` instead of `note(C, 4)`.
 - ([a81bd19](https://github.com/tttapa/Control-Surface/commit/a81bd1927298decc2ea3852fd2f00e8028c14b81))  
@@ -380,9 +406,9 @@ documentation page for a table with supported features per board.
 - ([37b6901](https://github.com/tttapa/Control-Surface/commit/37b6901cbe56babc47c297a132381d53deaa45e8))  
    The `NoteValueLED` and `CCValueLED` classes (and similar) have been replaced
    by `NoteLED` and `CCLED` respectively.  
-   The display elements `BitmapDisplay`, `VPotDisplay`, `VUDisplay` etc. are 
+   The display elements `BitmapDisplay`, `VPotDisplay`, `VUDisplay` etc. are
    now generic in the type of value that they display. In most cases, you should
-   be able to update your sketch by adding `<>` after the type names, e.g. 
+   be able to update your sketch by adding `<>` after the type names, e.g.
    `BitmapDisplay<>`, `VPotDisplay<>`, etc.
 - ([1a21d13](https://github.com/tttapa/Control-Surface/commit/1a21d1344f57066fa1eda3819eaf89cbbc79c14e))  
    The line numbers of `LCDDisplay` are now one-based: `1` is the first line and
@@ -390,39 +416,39 @@ documentation page for a table with supported features per board.
    the API of the rest of the library. (Before, the first line was `0` and the
    second line was `1`.)
 - ([40e3d7a](https://github.com/tttapa/Control-Surface/commit/40e3d7a4377b281e58dd7725f1bb8c6198855ce6))  
-   Control Surface now comes with an Encoder library out of the box. You no 
+   Control Surface now comes with an Encoder library out of the box. You no
    longer have to install or include `Encoder.h` in your sketches.
 
 ### 1.x
 
 - ([8a3b1b3](https://github.com/tttapa/Control-Surface/commit/8a3b1b314cf5b4aedf3ad60cbbc492fbcbb25c73))  
    Before, `Control_Surface.MIDI()` was used to get the MIDI interface used by
-   Control Surface. This method was removed, because you can now connect 
-   multiple interfaces to Control Surface, using the 
+   Control Surface. This method was removed, because you can now connect
+   multiple interfaces to Control Surface, using the
    [MIDI Pipe routing system](https://tttapa.github.io/Control-Surface/Doxygen/df/d72/classMIDI__Pipe.html).
-   To send MIDI using Control Surface, you can now use 
+   To send MIDI using Control Surface, you can now use
    `Control_Surface.sendCC(...)` and the other similar methods directly.
 - ([8a3b1b3](https://github.com/tttapa/Control-Surface/commit/8a3b1b314cf5b4aedf3ad60cbbc492fbcbb25c73))  
    For the same reason as the bullet above, the `MultiMIDI_Interface` was
    removed, and has been replaced by the
    [MIDI Pipe routing system](https://tttapa.github.io/Control-Surface/Doxygen/df/d72/classMIDI__Pipe.html).
 - ([bca6e11](https://github.com/tttapa/Control-Surface/commit/bca6e11b2b3e02df5f600f65c81676708a81155b))  
-   The color mapper for `NoteRangeFastLED` and the like now takes a second 
+   The color mapper for `NoteRangeFastLED` and the like now takes a second
    parameter that represents the index of the LED within the LED strip.
 - ([3c01c7d](https://github.com/tttapa/Control-Surface/commit/3c01c7d5eb60e59720540d5a77095468e6984a58))  
    The **maximum supported ADC resolution is now used by default** (e.g. 13 bits
    on Teensy 3.x, 12 bits on ESP32).  
-   This increases the accuracy of analog inputs and controls for the Control 
+   This increases the accuracy of analog inputs and controls for the Control
    Surface library, but could cause problems if your code uses other libraries
    that expect the resolution to be 10 bits.  
-   You can change the default resolution to 10 bits in 
+   You can change the default resolution to 10 bits in
    [`src/AH/Hardware/ADCConfig.hpp`](https://tttapa.github.io/Control-Surface/Doxygen/d7/d7c/ADCConfig_8hpp_source.html)
    if you have to.
 - ([31edaa6](https://github.com/tttapa/Control-Surface/commit/31edaa6b76477fdf152c19fd34f7e4e8506561e6))  
    The **mapping function** is now applied before applying hysteresis.  
-   This means that the input and output values of the function should be 
+   This means that the input and output values of the function should be
    16 - `ANALOG_FILTER_SHIFT_FACTOR` bits wide instead of 7. By default this is
    **14 bits**. You can get the maximum value in a portable way by using the
    `FilteredAnalog<>::getMaxRawValue()` function.  
-   The signature of the mapping function is now `analog_t f(analog_t raw)`, 
+   The signature of the mapping function is now `analog_t f(analog_t raw)`,
    where the return value and raw are both numbers in [0, 16383] by default.
