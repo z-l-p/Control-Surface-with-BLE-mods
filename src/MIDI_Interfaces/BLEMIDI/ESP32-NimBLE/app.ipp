@@ -1,3 +1,4 @@
+#include "dis.ipp"
 #ifdef ESP32
 #include <sdkconfig.h>
 #if CONFIG_BT_BLE_ENABLED || CONFIG_BT_NIMBLE_ENABLED
@@ -78,7 +79,9 @@ inline bool init(MIDIBLEInstance &instance, BLESettings ble_settings) {
     const auto *gatt_server_services = midi_ble_get_service();
     CS_CHECK_ZERO(ble_gatts_count_cfg(gatt_server_services));
     CS_CHECK_ZERO(ble_gatts_add_svcs(gatt_server_services));
-
+    // Device Information Service (DIS)
+    CS_CHECK_ZERO(ble_gatts_count_cfg(cs::midi_ble_nimble::dis_get_service()));
+    CS_CHECK_ZERO(ble_gatts_add_svcs(cs::midi_ble_nimble::dis_get_service()));
     // Set the default device name
     CS_CHECK_ZERO(ble_svc_gap_device_name_set(ble_settings.device_name));
     set_advertise_connection_interval(ble_settings.connection_interval.minimum,
