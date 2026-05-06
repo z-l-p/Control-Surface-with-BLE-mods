@@ -13,3 +13,4 @@ __pycache__/
 build
 docs/Coverage
 docs/Doxygen
+.DS_Store
