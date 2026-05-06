@@ -1,7 +1,7 @@
 {
-    "name": "Control Surface",
+    "name": "Control Surface (fork with BLE name mods)",
     "version": "2.1.1",
-    "description": "Arduino library for creating MIDI controllers and other MIDI devices.",
+    "description": "Arduino library for creating MIDI controllers and other MIDI devices. (forked to add BLE manufacturer + model names)",
     "keywords": [
         "midi",
         "midi-controller",
@@ -14,11 +14,11 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/tttapa/Control-Surface.git"
+        "url": "https://github.com/z-l-p/Control-Surface-with-BLE-mods"
     },
     "authors": [
         {
-            "name": "Pieter P",
+            "name": "Pieter P (forked by z-l-p)",
             "maintainer": true
         }
     ],
